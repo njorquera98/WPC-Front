@@ -1,0 +1,41 @@
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header">
+          Configuración Inicial del Americano
+        </div>
+        <div class="card-body">
+          <form (ngSubmit)="onSubmit()">
+            <div class="form-group">
+              <label for="cantidadParejas">Cantidad de Parejas:</label>
+              <input type="number" class="form-control" id="cantidadParejas" name="cantidadParejas" [(ngModel)]="cantidadParejas" (change)="onCantidadParejasChange()" placeholder="Ingrese cantidad de parejas">
+            </div>
+            <div class="form-group">
+              <label for="cantidadCanchas">Cantidad de Canchas:</label>
+              <input type="number" class="form-control" id="cantidadCanchas" name="cantidadCanchas" [(ngModel)]="cantidadCanchas" placeholder="Ingrese cantidad de canchas">
+            </div>
+            <div class="form-group">
+              <label for="cantidadGrupos">Cantidad de Grupos:</label>
+              <input type="number" class="form-control" id="cantidadGrupos" name="cantidadGrupos" [(ngModel)]="cantidadGrupos" placeholder="Ingrese cantidad de grupos">
+            </div>
+            <div class="form-group">
+              <label for="fechaInicio">Fecha de Inicio:</label>
+              <input type="date" class="form-control" id="fechaInicio" name="fechaInicio" [(ngModel)]="fechaInicio">
+            </div>
+            <div class="form-group">
+              <label for="horaInicio">Hora de Inicio:</label>
+              <input type="time" class="form-control" id="horaInicio" name="horaInicio" [(ngModel)]="horaInicio">
+            </div>
+            <div *ngFor="let pareja of parejas; let i = index" class="form-group">
+              <label for="pareja{{i}}">Nombre de la Pareja {{i + 1}}:</label>
+              <input type="text" class="form-control" id="pareja{{i}}" name="pareja{{i}}" [(ngModel)]="pareja.nombre" placeholder="Ingrese nombre de la pareja {{i + 1}}">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
