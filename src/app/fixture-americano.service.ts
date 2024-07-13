@@ -6,6 +6,7 @@ import { Injectable } from '@angular/core';
 export class FixtureAmericanoService {
   private grupos: any[] = [];
   private datosTorneo: any = {};
+  private fechaInicioTorneo: string = '';
 
   constructor() { }
 
@@ -24,5 +25,12 @@ export class FixtureAmericanoService {
   getDatosTorneo() {
     return this.datosTorneo;
   }
-}
 
+  setFechaInicioTorneo(fechaInicio: string) {
+    this.fechaInicioTorneo = fechaInicio;
+  }
+
+  getFechaInicioTorneo() {
+    return this.fechaInicioTorneo;
+  }
+}

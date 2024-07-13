@@ -17,7 +17,13 @@ export class FixtureComponent {
   grupos: {
     nombre: string,
     parejas: { nombre: string }[],
-    partidos: { pareja1: string, pareja2: string, resultado: string }[]
+    partidos: {
+      pareja1: string,
+      pareja2: string,
+      resultado: string,
+      horaPartido: string, // Nueva propiedad: hora del partido
+      numeroCancha: number // Nueva propiedad: número de cancha
+    }[]
   }[] = [];
 
   constructor(
@@ -51,10 +57,13 @@ export class FixtureComponent {
     this.grupos.forEach(grupo => {
       for (let i = 0; i < grupo.parejas.length; i++) {
         for (let j = i + 1; j < grupo.parejas.length; j++) {
+          // Aquí asignamos la hora del partido y el número de cancha
           grupo.partidos.push({
             pareja1: grupo.parejas[i].nombre,
             pareja2: grupo.parejas[j].nombre,
-            resultado: ''
+            resultado: '',
+            horaPartido: '', // Debes definir cómo obtendrás esta hora
+            numeroCancha: 0 // Debes definir cómo obtendrás este número
           });
         }
       }
@@ -92,3 +101,4 @@ export class FixtureComponent {
     this.torneoService.setGrupos(this.grupos);
   }
 }
+
