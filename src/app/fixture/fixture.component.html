@@ -1,3 +1,4 @@
+
 <div class="container mt-5">
   <div class="row justify-content-center">
     <div class="col-md-6">
@@ -6,28 +7,34 @@
         <div class="card-body">
           <form (ngSubmit)="onSubmit()">
             <div class="form-group">
-              <label for="cantidadParejas">Cantidad de Parejas:</label>
-              <input type="number" class="form-control" id="cantidadParejas" name="cantidadParejas" [(ngModel)]="cantidadParejas" (change)="onCantidadParejasChange()" placeholder="Ingrese cantidad de parejas">
+              <label for="nombre">Nombre Americano:</label>
+              <input type="text" class="form-control" id="nombre" name="nombre" [(ngModel)]="nombreAmericano" required>
             </div>
             <div class="form-group">
-              <label for="cantidadCanchas">Cantidad de Canchas:</label>
-              <input type="number" class="form-control" id="cantidadCanchas" name="cantidadCanchas" [(ngModel)]="cantidadCanchas" placeholder="Ingrese cantidad de canchas">
+              <label for="fechaInicio">Fecha y Hora de Inicio:</label>
+              <input type="datetime-local" class="form-control" id="fechaInicio" name="fechaInicio" [(ngModel)]="fechaInicio" required>
+            </div>
+
+            <div class="form-group">
+              <label>Canchas Disponibles:</label>
+              <div *ngFor="let cancha of canchas; let i = index">
+                <input class="form-check-input" type="checkbox" [value]="cancha" [id]="'cancha' + i" (change)="onCanchasChange(cancha, $event)">
+                <label class="form-check-label" [for]="'cancha' + i">
+                  {{ cancha }}
+                </label>
+              </div>
             </div>
             <div class="form-group">
               <label for="cantidadGrupos">Cantidad de Grupos:</label>
-              <input type="number" class="form-control" id="cantidadGrupos" name="cantidadGrupos" [(ngModel)]="cantidadGrupos" placeholder="Ingrese cantidad de grupos">
+              <input type="number" class="form-control" id="cantidadGrupos" name="cantidadGrupos" [(ngModel)]="cantidadGrupos" required>
             </div>
             <div class="form-group">
-              <label for="fechaInicio">Fecha de Inicio:</label>
-              <input type="date" class="form-control" id="fechaInicio" name="fechaInicio" [(ngModel)]="fechaInicio">
-            </div>
-            <div class="form-group">
-              <label for="horaInicio">Hora de Inicio:</label>
-              <input type="time" class="form-control" id="horaInicio" name="horaInicio" [(ngModel)]="horaInicio">
+              <label for="cantidadParejas">Cantidad de Parejas:</label>
+              <input type="number" class="form-control" id="cantidadParejas" name="cantidadParejas" [(ngModel)]="cantidadParejas" (change)="onCantidadParejasChange()" required>
             </div>
             <div *ngFor="let pareja of parejas; let i = index" class="form-group">
               <label for="pareja{{i}}">Nombre de la Pareja {{i + 1}}:</label>
-              <input type="text" class="form-control" id="pareja{{i}}" name="pareja{{i}}" [(ngModel)]="pareja.nombre" placeholder="Ingrese nombre de la pareja {{i + 1}}">
+              <input type="text" class="form-control" id="pareja{{i}}" name="pareja{{i}}" [(ngModel)]="pareja.nombre" placeholder="Ingrese nombre de la pareja {{i + 1}}" required>
             </div>
 
             <button type="submit" class="btn btn-primary">Guardar Configuración</button>

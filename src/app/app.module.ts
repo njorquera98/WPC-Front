@@ -7,7 +7,9 @@ import { LoginComponent } from './login/login.component';
 import { FixtureComponent } from './fixture/fixture.component';
 import { FormsModule } from '@angular/forms';
 import { AmericanoComponent } from './americano/americano.component';
-import { FixtureAmericanoService } from './fixture-americano.service';
+import { HttpClientModule } from '@angular/common/http';
+import { AmericanoService } from './services/americano.service';
+import { ParejaService } from './services/pareja.service';
 
 @NgModule({
   declarations: [
@@ -19,9 +21,10 @@ import { FixtureAmericanoService } from './fixture-americano.service';
   imports: [
     BrowserModule,
     AppRoutingModule,
-    FormsModule
+    FormsModule,
+    HttpClientModule
   ],
-  providers: [FixtureAmericanoService],
+  providers: [AmericanoService, ParejaService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

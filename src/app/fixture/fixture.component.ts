@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
-import { FixtureAmericanoService } from '../fixture-americano.service';
-import { Router } from '@angular/router';
+import { ParejaService } from '../services/pareja.service';
+import { AmericanoService } from '../services/americano.service';
+import { Pareja } from '../models/pareja.model';
 
 @Component({
   selector: 'app-fixture',
@@ -8,97 +9,60 @@ import { Router } from '@angular/router';
   styleUrls: ['./fixture.component.css']
 })
 export class FixtureComponent {
+  nombreAmericano: string = '';
   cantidadParejas: number = 0;
-  cantidadCanchas: number = 0;
   cantidadGrupos: number = 0;
   fechaInicio: string = '';
-  horaInicio: string = '';
   parejas: { nombre: string }[] = [];
-  grupos: {
-    nombre: string,
-    parejas: { nombre: string }[],
-    partidos: {
-      pareja1: string,
-      pareja2: string,
-      resultado: string,
-      horaPartido: string, // Nueva propiedad: hora del partido
-      numeroCancha: number // Nueva propiedad: número de cancha
-    }[]
-  }[] = [];
+  canchas: string[] = ['Cancha 1', 'Cancha 2', 'Cancha 3', 'Cancha 4'];
+  selectedCanchas: { [key: string]: boolean } = {};
 
-  constructor(
-    private router: Router,
-    private torneoService: FixtureAmericanoService
-  ) { }
+  constructor(private parejaService: ParejaService, private americanoService: AmericanoService) { }
 
   onCantidadParejasChange() {
-    this.parejas = Array.from({ length: this.cantidadParejas }, (_, index) => ({
-      nombre: `Pareja ${index + 1}`
-    }));
-    this.grupos = [];
+    this.parejas = Array(this.cantidadParejas).fill({}).map((_, i) => ({ nombre: '' }));
+  }
+
+  onCanchasChange(cancha: string, event: any) {
+    this.selectedCanchas[cancha] = event.target.checked;
   }
 
   onSubmit() {
-    this.grupos = Array.from({ length: this.cantidadGrupos }, (_, index) => ({
-      nombre: `Grupo ${index + 1}`,
-      parejas: [],
-      partidos: []
-    }));
-
-    // Mezclar las parejas aleatoriamente
-    const parejasMezcladas = this.shuffleArray(this.parejas);
-
-    parejasMezcladas.forEach((pareja, index) => {
-      const groupIndex = index % this.cantidadGrupos;
-      this.grupos[groupIndex].parejas.push(pareja);
-    });
-
-    // Generar partidos para cada grupo
-    this.grupos.forEach(grupo => {
-      for (let i = 0; i < grupo.parejas.length; i++) {
-        for (let j = i + 1; j < grupo.parejas.length; j++) {
-          // Aquí asignamos la hora del partido y el número de cancha
-          grupo.partidos.push({
-            pareja1: grupo.parejas[i].nombre,
-            pareja2: grupo.parejas[j].nombre,
-            resultado: '',
-            horaPartido: '', // Debes definir cómo obtendrás esta hora
-            numeroCancha: 0 // Debes definir cómo obtendrás este número
-          });
-        }
-      }
-    });
-
-    // Guardar los datos adicionales en el servicio
-    this.torneoService.setDatosTorneo({
+    const canchasSeleccionadas = Object.keys(this.selectedCanchas).filter(cancha => this.selectedCanchas[cancha]);
+    const torneo = {
+      nombre: this.nombreAmericano,
       fechaInicio: this.fechaInicio,
-      horaInicio: this.horaInicio
-    });
+      cantidadParejas: this.cantidadParejas,
+      canchas: canchasSeleccionadas,
+      cantidadGrupos: this.cantidadGrupos
+    };
 
-    // Guardar los grupos en el servicio
-    this.torneoService.setGrupos(this.grupos);
+    // Crear el torneo primero
+    this.americanoService.nuevoAmericano(this.nombreAmericano, this.fechaInicio).subscribe(
+      response => {
+        console.log('Torneo creado exitosamente', response);
+        const americanoId = response.id; // Obtén el ID del torneo creado
 
-    // Navegar al componente Americano
-    this.navigateToAmericano();
-  }
+        // Crear las parejas con la referencia al torneo creado
+        this.parejas.forEach(pareja => {
+          const nuevaPareja: Pareja = { nombre_pareja: pareja.nombre, americano_fk: americanoId };
+          this.parejaService.nuevaPareja(nuevaPareja).subscribe(
+            response => {
+              console.log('Pareja agregada: ', response);
+            },
+            error => {
+              console.error('Error al agregar la pareja', error);
+              // Manejo de errores, si es necesario
+            }
+          );
+        });
 
-  private shuffleArray(array: any[]): any[] {
-    for (let i = array.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
-  }
-
-  navigateToAmericano() {
-    this.router.navigate(['/americano']);
-  }
-
-  onResultadoChange(grupoIndex: number, partidoIndex: number, resultado: string) {
-    this.grupos[grupoIndex].partidos[partidoIndex].resultado = resultado;
-
-    // Guardar los grupos en el servicio
-    this.torneoService.setGrupos(this.grupos);
+        // Aquí podrías redirigir o realizar otras acciones después de crear el torneo
+      },
+      error => {
+        console.error('Error al crear el torneo', error);
+        // Manejo de errores, si es necesario
+      }
+    );
   }
 }
-
