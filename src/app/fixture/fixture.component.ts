@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { ParejaService } from '../services/pareja.service';
 import { AmericanoService } from '../services/americano.service';
 import { Pareja } from '../models/pareja.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-fixture',
@@ -17,7 +18,7 @@ export class FixtureComponent {
   canchas: string[] = ['Cancha 1', 'Cancha 2', 'Cancha 3', 'Cancha 4'];
   selectedCanchas: { [key: string]: boolean } = {};
 
-  constructor(private parejaService: ParejaService, private americanoService: AmericanoService) { }
+  constructor(private router: Router, private parejaService: ParejaService, private americanoService: AmericanoService) { }
 
   onCantidadParejasChange() {
     this.parejas = Array(this.cantidadParejas).fill({}).map((_, i) => ({ nombre: '' }));
@@ -26,6 +27,7 @@ export class FixtureComponent {
   onCanchasChange(cancha: string, event: any) {
     this.selectedCanchas[cancha] = event.target.checked;
   }
+
 
   onSubmit() {
     const canchasSeleccionadas = Object.keys(this.selectedCanchas).filter(cancha => this.selectedCanchas[cancha]);
@@ -49,19 +51,18 @@ export class FixtureComponent {
           this.parejaService.nuevaPareja(nuevaPareja).subscribe(
             response => {
               console.log('Pareja agregada: ', response);
+              // Navegar al componente Americano pasando el id del torneo y la cantidad de grupos
+              this.router.navigate(['/americano', { id: americanoId, grupos: this.cantidadGrupos, fechaInicio: this.fechaInicio }]);
             },
             error => {
               console.error('Error al agregar la pareja', error);
-              // Manejo de errores, si es necesario
             }
           );
         });
 
-        // Aquí podrías redirigir o realizar otras acciones después de crear el torneo
       },
       error => {
         console.error('Error al crear el torneo', error);
-        // Manejo de errores, si es necesario
       }
     );
   }

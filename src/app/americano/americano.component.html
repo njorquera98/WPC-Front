@@ -4,28 +4,27 @@
       <div *ngIf="grupos.length > 0">
         <h2>Partidos por Grupo - Americano</h2>
         <p>Fecha de inicio del torneo: {{ fechaInicioTorneo }}</p>
-        <td>{{ calcularHorarioPartido }}</td>
-        <div *ngFor="let grupo of grupos; let g = index" class="mt-3">
-          <h4>{{ grupo.nombre }}</h4>
-          <table class="table table-bordered">
-            <thead>
-              <tr>
-                <th>Pareja 1</th>
-                <th>Pareja 2</th>
-                <th>Horario del partido</th>
-                <th>Resultado</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let partido of grupo.partidos; let p = index">
-                <td>{{ partido.pareja1 }}</td>
-                <td>{{ partido.pareja2 }}</td>
-                <td>{{ calcularHorarioPartido(p) }}</td>
-                <td>{{ partido.resultado }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        <table class="table table-bordered" *ngFor="let grupo of grupos; let g = index">
+          <thead>
+            <tr>
+              <th colspan="4">{{ grupo.nombre }}</th>
+            </tr>
+            <tr>
+              <th>Pareja 1</th>
+              <th>Pareja 2</th>
+              <th>Horario del partido</th>
+              <th>Resultado</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let partido of grupo.partidos; let p = index">
+              <td>{{ partido.pareja1 }}</td>
+              <td>{{ partido.pareja2 }}</td>
+              <td>{{ calcularHorarioPartido(p) }}</td>
+              <td>{{ partido.resultado }}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

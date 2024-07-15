@@ -14,4 +14,8 @@ export class ParejaService {
   nuevaPareja(pareja: Pareja): Observable<any> {
     return this.http.post(this.apiUrl, pareja);
   }
+
+  getParejasByAmericanoId(americanoId: string): Observable<Pareja[]> {
+    return this.http.get<Pareja[]>(`${this.apiUrl}/americano/${americanoId}`);
+  }
 }
