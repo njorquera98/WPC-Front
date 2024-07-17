@@ -1,6 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { Americano } from '../models/americano.model';
 
 @Injectable({
   providedIn: 'root'
@@ -10,11 +11,12 @@ export class AmericanoService {
 
   constructor(private http: HttpClient) { }
 
-  nuevoAmericano(nombre: string, fecha: string): Observable<any> {
-    const body = {
-      nombre: nombre,
-      fecha: fecha
-    };
-    return this.http.post(this.apiUrl, body);
+  nuevoAmericano(nombre: string, fecha: string, cantidadGrupos: number): Observable<Americano[]> {
+    const body = { nombre, fechaInicio: fecha, cantidadGrupos };
+    return this.http.post<Americano[]>(this.apiUrl, body);
+  }
+
+  getAmericano(id: string): Observable<Americano> {
+    return this.http.get<Americano>(`${this.apiUrl}/${id}`);
   }
 }

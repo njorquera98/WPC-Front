@@ -7,7 +7,7 @@ import { AmericanoComponent } from './americano/americano.component';
 const routes: Routes = [
   { path: 'login', component: LoginComponent },
   { path: 'fixture', component: FixtureComponent },
-  { path: 'americano', component: AmericanoComponent },
+  { path: 'americano/:id', component: AmericanoComponent },
   { path: '', redirectTo: '/fixture', pathMatch: 'full' }
 ];
 
