@@ -25,7 +25,9 @@ export class AmericanoComponent implements OnInit {
   nombreAmericano: string = '';
   numeroCancha: string = '';
   canchas: Cancha[] = [];
-  resultadosPorPareja: { [key: number]: string } = {}; // Definir la variable para almacenar los resultados
+  resultadosPorPareja: { [key: number]: string } = {}; // Variable para almacenar los resultados por pareja
+  loading: boolean = true;
+  errorLoadingData: boolean = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -40,6 +42,7 @@ export class AmericanoComponent implements OnInit {
 
     if (!this.americanoId) {
       console.error('Faltan parámetros necesarios en la ruta');
+      this.errorLoadingData = true;
       return;
     }
 
@@ -54,14 +57,19 @@ export class AmericanoComponent implements OnInit {
             this.canchas = canchas;
             this.numeroCancha = canchas.length > 0 ? canchas[0].numeroCancha : '';
             this.getParejas();
+            this.loading = false;
           },
           (error: any) => {
             console.error('Error al obtener las Canchas', error);
+            this.errorLoadingData = true;
+            this.loading = false;
           }
         );
       },
       (error: any) => {
         console.error('Error al obtener el Americano', error);
+        this.errorLoadingData = true;
+        this.loading = false;
       }
     );
   }
@@ -73,16 +81,19 @@ export class AmericanoComponent implements OnInit {
           console.log('Parejas obtenidas:', parejas);
           this.parejas = parejas;
           this.organizarPorGrupos();
-          this.llenarResultadosPorPareja();
+          this.llenarResultadosPorPareja(); // Llenar resultados por pareja
         },
         (error: any) => {
           console.error('Error al obtener las parejas', error);
+          this.errorLoadingData = true;
         }
       );
     } else {
       console.error('El ID del americano es nulo');
+      this.errorLoadingData = true;
     }
   }
+
 
   organizarPorGrupos() {
     if (this.parejas.length === 0) {
@@ -92,6 +103,17 @@ export class AmericanoComponent implements OnInit {
 
     const grupos: Grupo[] = [];
     const parejasPorGrupo = Math.ceil(this.parejas.length / this.cantidadGrupos);
+
+    // Ordenar parejas por ID (o cualquier otro criterio de orden)
+    this.parejas.sort((a, b) => {
+      if (a.id !== undefined && b.id !== undefined) {
+        return a.id - b.id;
+      }
+      return 0;
+    });
+
+    // Calcular la fecha del primer partido (hora de inicio del torneo)
+    const fechaPrimerPartido = this.fechaInicioTorneo ? new Date(this.fechaInicioTorneo) : new Date();
 
     for (let i = 0; i < this.cantidadGrupos; i++) {
       const grupo: Grupo = {
@@ -104,18 +126,20 @@ export class AmericanoComponent implements OnInit {
       const inicio = i * parejasPorGrupo;
       const fin = Math.min(inicio + parejasPorGrupo, this.parejas.length);
 
+      const parejaUsada: Set<number> = new Set(); // Conjunto para evitar repetición de parejas
+
       for (let j = inicio; j < fin; j++) {
         for (let k = j + 1; k < fin; k++) {
           const pareja1Id = this.parejas[j]?.id;
           const pareja2Id = this.parejas[k]?.id;
 
-          if (pareja1Id !== undefined && pareja2Id !== undefined) {
-            const nuevoPartido: Partido = {
+          if (pareja1Id !== undefined && pareja2Id !== undefined && !parejaUsada.has(pareja1Id) && !parejaUsada.has(pareja2Id)) {
+            const partido1: Partido = {
               pareja1: this.parejas[j],
               pareja2: this.parejas[k],
               resultadoPareja1: 0,
               resultadoPareja2: 0,
-              fecha: this.fechaInicioTorneo ? new Date(this.fechaInicioTorneo) : new Date(),
+              fecha: new Date(fechaPrimerPartido.getTime()), // Fecha del primer partido (inicialmente igual)
               grupo: grupo,
               americano: {
                 id: +this.americanoId!,
@@ -134,8 +158,39 @@ export class AmericanoComponent implements OnInit {
               cancha_fk: this.canchas[0]?.id || 0
             };
 
-            this.crearPartidoEnBackend(nuevoPartido);
-            grupo.partidos.push(nuevoPartido);
+            grupo.partidos.push(partido1);
+            parejaUsada.add(pareja1Id);
+            parejaUsada.add(pareja2Id);
+
+            // Calcular la fecha del segundo partido (20 minutos después del primero)
+            const fechaSegundoPartido = new Date(fechaPrimerPartido.getTime());
+            fechaSegundoPartido.setMinutes(fechaSegundoPartido.getMinutes() + 20);
+
+            const partido2: Partido = {
+              pareja1: this.parejas[j],
+              pareja2: this.parejas[k],
+              resultadoPareja1: 0,
+              resultadoPareja2: 0,
+              fecha: fechaSegundoPartido, // Fecha del segundo partido
+              grupo: grupo,
+              americano: {
+                id: +this.americanoId!,
+                nombre: this.nombreAmericano,
+                fechaInicio: this.fechaInicioTorneo?.toISOString() || '',
+                cantidadGrupos: this.cantidadGrupos
+              },
+              cancha: {
+                id: this.canchas[0]?.id || 0,
+                numeroCancha: this.numeroCancha
+              },
+              pareja1_fk: pareja1Id,
+              pareja2_fk: pareja2Id,
+              grupo_fk: grupo.id,
+              americano_fk: +this.americanoId!,
+              cancha_fk: this.canchas[0]?.id || 0
+            };
+
+            grupo.partidos.push(partido2);
           }
         }
       }
@@ -143,40 +198,17 @@ export class AmericanoComponent implements OnInit {
       grupos.push(grupo);
     }
 
+    // Ordenar los partidos dentro de cada grupo por fecha
+    grupos.forEach(grupo => {
+      grupo.partidos.sort((a, b) => a.fecha.getTime() - b.fecha.getTime());
+    });
+
     this.grupos = grupos;
     console.log('Grupos organizados:', this.grupos);
   }
 
-
-  crearPartidoEnBackend(partido: Partido) {
-    // Construir el payload utilizando la nueva interfaz
-    const payload: CrearPartidoPayload = {
-      resultadoPareja1: partido.resultadoPareja1,
-      resultadoPareja2: partido.resultadoPareja2,
-      fecha: partido.fecha,
-      pareja1_fk: partido.pareja1_fk,
-      pareja2_fk: partido.pareja2_fk,
-      grupo_fk: partido.grupo_fk,
-      americano_fk: partido.americano_fk,
-      cancha_fk: partido.cancha_fk,
-    };
-
-    console.log('Formato', payload);
-
-    // Llamar al servicio para crear el partido
-    this.partidoService.crearPartido(payload).subscribe(
-      (response: any) => {
-        console.log('Partido creado exitosamente:', response);
-      },
-      (error: any) => {
-        console.error('Error al crear el partido:', error);
-      }
-    );
-  }
-
-
-
   llenarResultadosPorPareja() {
+    // Llenar resultados por pareja
     for (const grupo of this.grupos) {
       for (const partido of grupo.partidos) {
         const pareja1Id = partido.pareja1.id;
@@ -198,11 +230,25 @@ export class AmericanoComponent implements OnInit {
   }
 
   getParejasPorGrupo(grupo: Grupo): Pareja[] {
+    // Filtrar y obtener parejas por grupo
     return this.parejas.filter(pareja => pareja.americano_fk === grupo.americano_fk);
   }
 
+
   calcularHorarioPartido(index: number): string {
-    return `Horario ${index + 1}`;
+    if (this.grupos.length === 0) {
+      return ''; // Si no hay grupos, no se puede calcular el horario
+    }
+
+    const ultimoPartido = this.grupos[this.grupos.length - 1].partidos[index];
+    const fechaUltimoPartido = ultimoPartido.fecha || new Date();
+
+    // Calcular la fecha del siguiente partido (20 minutos después)
+    const fechaSiguientePartido = new Date(fechaUltimoPartido.getTime());
+    fechaSiguientePartido.setMinutes(fechaSiguientePartido.getMinutes() + 20);
+
+    return fechaSiguientePartido.toLocaleTimeString('es-ES', { hour: 'numeric', minute: '2-digit' });
   }
+
 }
 

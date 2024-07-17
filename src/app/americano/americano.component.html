@@ -3,7 +3,7 @@
     <div class="col-md-8">
       <div *ngIf="grupos.length > 0">
         <h2>Partidos por Grupo - Americano</h2>
-        <p>Fecha de inicio del torneo: {{ fechaInicioTorneo }}</p>
+<p>Fecha de inicio del torneo: {{ fechaInicioTorneo | date:'medium' }}</p>
         <ng-container *ngFor="let grupo of grupos; let g = index">
           <table class="table table-bordered mt-4">
             <thead>
