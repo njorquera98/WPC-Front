@@ -1,58 +1,44 @@
-<div class="container mt-5">
-  <div class="row justify-content-center">
-    <div class="col-md-8">
-      <div *ngIf="grupos.length > 0">
-        <h2>Partidos por Grupo - Americano</h2>
-<p>Fecha de inicio del torneo: {{ fechaInicioTorneo | date:'medium' }}</p>
-        <ng-container *ngFor="let grupo of grupos; let g = index">
-          <table class="table table-bordered mt-4">
-            <thead>
-              <tr>
-                <th colspan="6">{{ grupo.nombreGrupo }}</th>
-              </tr>
-              <tr>
-                <th>Pareja 1</th>
-                <th>Pareja 2</th>
-                <th>Cancha</th>
-                <th>Horario del partido</th>
-                <th>Resultado</th>
-                <th>Acción</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let partido of grupo.partidos; let p = index">
-                <td>{{ partido.pareja1.nombre_pareja }}</td>
-                <td>{{ partido.pareja2.nombre_pareja }}</td>
-                <td>{{ partido.cancha.numeroCancha }}</td>
-                <td>{{ calcularHorarioPartido(p) }}</td>
-                <td>{{ partido.resultadoPareja1 }} - {{ partido.resultadoPareja2 }}</td>
-                <td>
-                  <button type="submit" class="btn btn-primary">Modificar Resultado</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+<!-- Mostrar la fecha de inicio del torneo -->
+<div>
+  <h1>Torneo Americano</h1>
+  <p><strong>Fecha de Inicio del Torneo:</strong> {{ fechaInicioTorneo | date:'M/dd/yy' }}</p>
+</div>
 
-          <table class="table table-bordered mt-4">
-            <thead>
-              <tr>
-                <th colspan="2">Parejas del Grupo {{ grupo.nombreGrupo }}</th>
-              </tr>
-              <tr>
-                <th>Parejas</th>
-                <th>Resultados</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let pareja of getParejasPorGrupo(grupo); let i = index">
-                <td>{{ pareja.nombre_pareja }}</td>
-                <td>{{ pareja.id ? resultadosPorPareja[pareja.id] || '-' : '-' }}</td>
-              </tr>
-            </tbody>
-          </table>
-        </ng-container>
-      </div>
-    </div>
+<!-- Mostrar los grupos -->
+<div *ngFor="let grupo of grupos">
+  <h2>{{ grupo.nombreGrupo }}</h2>
+
+  <!-- Mostrar las parejas en el grupo -->
+  <div>
+    <h3>Parejas</h3>
+    <ul>
+      <li *ngFor="let pareja of getParejasPorGrupo(grupo)">
+        {{ pareja.nombre_pareja }}
+      </li>
+    </ul>
+  </div>
+
+  <!-- Mostrar los partidos en el grupo -->
+  <div>
+    <h3>Partidos</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Pareja 1</th>
+          <th>Pareja 2</th>
+          <th>Resultado</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let partido of getPartidosPorGrupo(grupo)">
+          <td>{{ partido.fecha | date:'M/dd/yy h:mm a' }}</td>
+          <td>{{ obtenerNombrePareja(partido.pareja1_fk) }}</td>
+          <td>{{ obtenerNombrePareja(partido.pareja2_fk) }}</td>
+          <td>{{ partido.resultadoPareja1 }} - {{ partido.resultadoPareja2 }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 </div>
 

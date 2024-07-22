@@ -12,8 +12,8 @@ export class ParejaService {
 
   constructor(private http: HttpClient) { }
 
-  nuevaPareja(pareja: Pareja): Observable<Pareja[]> {
-    return this.http.post<Pareja[]>(this.apiUrl, pareja);
+  nuevaPareja(pareja: Pareja): Observable<Pareja> {
+    return this.http.post<Pareja>(this.apiUrl, pareja);
   }
 
   getParejasByAmericanoId(americanoId: string): Observable<Pareja[]> {
@@ -22,5 +22,9 @@ export class ParejaService {
 
   getAmericanoById(id: string): Observable<Americano> {
     return this.http.get<Americano>(`${this.apiUrl}/americano/${id}`);
+  }
+
+  obtenerParejasPorAmericano(americanoId: number): Observable<Pareja[]> {
+    return this.http.get<Pareja[]>(`${this.apiUrl}/americano/${americanoId}`);
   }
 }

@@ -2,22 +2,20 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Partido } from '../models/partido.model';
-import { CrearPartidoPayload } from '../models/createPartido.model';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PartidoService {
-  private apiUrl = 'http://localhost:3000/partidos';
+
+  private apiUrl = `${environment.apiUrl}/partidos`;
 
   constructor(private http: HttpClient) { }
 
-  getPartidos(): Observable<Partido[]> {
-    return this.http.get<Partido[]>(this.apiUrl);
-  }
-
-  crearPartido(partido: CrearPartidoPayload): Observable<CrearPartidoPayload> {
+  crearPartido(partido: Partido): Observable<Partido> {
     return this.http.post<Partido>(this.apiUrl, partido);
   }
 }
+
 

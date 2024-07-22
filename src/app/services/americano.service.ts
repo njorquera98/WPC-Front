@@ -16,7 +16,7 @@ export class AmericanoService {
     return this.http.post<Americano[]>(this.apiUrl, body);
   }
 
-  getAmericano(id: string): Observable<Americano> {
+  getAmericano(id: number): Observable<Americano> {
     return this.http.get<Americano>(`${this.apiUrl}/${id}`);
   }
 }

@@ -2,7 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { ParejaService } from '../services/pareja.service';
 import { AmericanoService } from '../services/americano.service';
 import { CanchaService } from '../services/cancha.service';
+import { GrupoService } from '../services/grupo.service';
 import { Pareja } from '../models/pareja.model';
+import { Grupo } from '../models/grupo.model';
 import { Router } from '@angular/router';
 import { forkJoin } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
@@ -26,7 +28,8 @@ export class FixtureComponent implements OnInit {
     private router: Router,
     private parejaService: ParejaService,
     private americanoService: AmericanoService,
-    private canchaService: CanchaService
+    private canchaService: CanchaService,
+    private grupoService: GrupoService
   ) { }
 
   ngOnInit() {
@@ -37,8 +40,10 @@ export class FixtureComponent implements OnInit {
     this.canchaService.getCanchas().subscribe(
       (canchas: Cancha[]) => {
         this.canchas = canchas;
-        // Inicializa selectedCanchas con false para cada cancha
-        canchas.forEach(cancha => this.selectedCanchas[cancha.numeroCancha] = false);
+        this.selectedCanchas = canchas.reduce((acc, cancha) => {
+          acc[cancha.numeroCancha] = false;
+          return acc;
+        }, {} as { [key: string]: boolean });
       },
       error => {
         console.error('Error al cargar las canchas', error);
@@ -64,47 +69,83 @@ export class FixtureComponent implements OnInit {
       cantidadGrupos: this.cantidadGrupos
     };
 
-    // Crear el torneo primero
     this.americanoService.nuevoAmericano(this.nombreAmericano, this.fechaInicio, this.cantidadGrupos)
       .pipe(
         catchError(error => {
           console.error('Error al crear el torneo', error);
-          throw error; // Propaga el error
+          throw error;
         })
       )
       .subscribe(
         (response: any) => {
-          console.log('Respuesta del backend:', response); // Verifica la respuesta del backend
-
           if (response && response.id) {
-            const americanoId = response.id; // Obtén el ID del torneo creado
+            const americanoId = response.id;
 
-            // Crear las parejas con la referencia al torneo creado
-            const parejasObservables = this.parejas.map(pareja => {
-              const nuevaPareja: Pareja = {
-                id: undefined, // Deja 'id' indefinido para que lo genere el backend
-                nombre_pareja: pareja.nombre,
-                americano_fk: americanoId
+            // Crear los grupos
+            const gruposObservables = Array.from({ length: this.cantidadGrupos }, (_, i) => {
+              const grupo: Grupo = {
+                americano_fk: americanoId,
+                nombreGrupo: `Grupo ${i + 1}`
               };
-              return this.parejaService.nuevaPareja(nuevaPareja);
+              return this.grupoService.crearGrupo(grupo);
             });
 
-            // Usar forkJoin para esperar a que todas las parejas sean creadas
-            forkJoin(parejasObservables)
+            forkJoin(gruposObservables)
               .pipe(
+                catchError(error => {
+                  console.error('Error al crear los grupos', error);
+                  throw error;
+                }),
                 finalize(() => {
-                  // Navegar al componente Americano pasando solo el id del torneo
-                  this.router.navigate(['/americano', americanoId]);
+                  // Obtener los grupos creados
+                  this.grupoService.obtenerGruposPorAmericano(americanoId).subscribe(
+                    (grupos: Grupo[]) => {
+                      console.log('Grupos obtenidos:', grupos); // Agregar esta línea para depuración
+                      if (!grupos.length) {
+                        console.error('No se encontraron grupos para asignar a las parejas');
+                        return;
+                      }
+
+                      const parejasPorGrupo = Math.ceil(this.cantidadParejas / this.cantidadGrupos);
+                      const parejasObservables = this.parejas.map((pareja, index) => {
+                        const grupoIndex = Math.floor(index / parejasPorGrupo);
+                        const grupo = grupos[grupoIndex];
+                        if (!grupo || grupo.id === undefined) {
+                          console.error('No se encontró el grupo para la pareja');
+                          return;  // Maneja el caso donde el grupo no se encuentra
+                        }
+                        const grupoFk = grupo.id;
+                        const nuevaPareja: Pareja = {
+                          id: undefined,
+                          nombre_pareja: pareja.nombre,
+                          americano_fk: americanoId,
+                          grupo_fk: grupoFk
+                        };
+                        return this.parejaService.nuevaPareja(nuevaPareja);
+                      }).filter(Boolean);  // Filtra los valores undefined
+
+                      forkJoin(parejasObservables)
+                        .pipe(
+                          finalize(() => {
+                            this.router.navigate(['/americano', americanoId]);
+                          })
+                        )
+                        .subscribe(
+                          results => {
+                            console.log('Todas las parejas fueron agregadas: ', results);
+                          },
+                          error => {
+                            console.error('Error al agregar las parejas', error);
+                          }
+                        );
+                    },
+                    error => {
+                      console.error('Error al obtener los grupos', error);
+                    }
+                  );
                 })
               )
-              .subscribe(
-                results => {
-                  console.log('Todas las parejas fueron agregadas: ', results);
-                },
-                error => {
-                  console.error('Error al agregar las parejas', error);
-                }
-              );
+              .subscribe();
           } else {
             console.error('No se recibió una respuesta válida del backend');
           }
