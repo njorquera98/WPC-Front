@@ -27,4 +27,10 @@ export class ParejaService {
   obtenerParejasPorAmericano(americanoId: number): Observable<Pareja[]> {
     return this.http.get<Pareja[]>(`${this.apiUrl}/americano/${americanoId}`);
   }
+
+
+  actualizarPareja(parejaId: number, data: Partial<Pareja>): Observable<Pareja> {
+    return this.http.put<Pareja>(`${this.apiUrl}/${parejaId}`, data);
+  }
+
 }

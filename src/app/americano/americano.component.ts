@@ -1,4 +1,5 @@
 import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { PartidoService } from '../services/partido.service';
 import { GrupoService } from '../services/grupo.service';
 import { ParejaService } from '../services/pareja.service';
@@ -21,6 +22,7 @@ export class AmericanoComponent implements OnInit {
   fechaInicioTorneo!: Date;
 
   constructor(
+    private route: ActivatedRoute,
     private partidoService: PartidoService,
     private grupoService: GrupoService,
     private parejaService: ParejaService,
@@ -28,16 +30,18 @@ export class AmericanoComponent implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.americanoId = 1; // Ajusta según sea necesario
-    console.log('Cargando datos para el Americano con ID:', this.americanoId);
-
-    if (this.americanoId !== undefined) {
-      this.loadAmericano();
-      this.loadGrupos();
-      this.loadParejas();
-    } else {
-      console.error('americanoId no está definido');
-    }
+    this.route.paramMap.subscribe((params) => {
+      const id = params.get('id');
+      if (id) {
+        this.americanoId = +id; // Convierte el id a número
+        console.log('Cargando datos para el Americano con ID:', this.americanoId);
+        this.loadAmericano();
+        this.loadGrupos();
+        this.loadParejas();
+      } else {
+        console.error('americanoId no está definido en la URL');
+      }
+    });
   }
 
   loadAmericano() {
@@ -53,11 +57,12 @@ export class AmericanoComponent implements OnInit {
   }
 
   loadGrupos() {
+    console.log("Americano ID antes del service", this.americanoId);
     this.grupoService.obtenerGruposPorAmericano(this.americanoId).subscribe(
       (grupos: Grupo[]) => {
         console.log('Grupos cargados:', grupos);
         this.grupos = grupos;
-        this.createPartidos(); // Llama a la función después de cargar los grupos
+        this.assignParejasToGroups(); // Asigna las parejas a los grupos aleatoriamente después de cargar los grupos
       },
       (error: HttpErrorResponse) => {
         console.error('Error al cargar los grupos', error);
@@ -70,12 +75,39 @@ export class AmericanoComponent implements OnInit {
       (parejas: Pareja[]) => {
         console.log('Parejas cargadas:', parejas);
         this.parejas = parejas;
-        this.createPartidos(); // Llama a la función después de cargar las parejas
       },
       (error: HttpErrorResponse) => {
         console.error('Error al cargar las parejas', error);
       }
     );
+  }
+
+  assignParejasToGroups() {
+    if (!this.grupos.length || !this.parejas.length) {
+      console.log('No se pueden asignar parejas a grupos, falta información de grupos o parejas.');
+      return;
+    }
+
+    // Baraja las parejas aleatoriamente
+    const shuffledParejas = [...this.parejas].sort(() => 0.5 - Math.random());
+
+    // Asigna las parejas a los grupos de forma circular
+    let groupIndex = 0;
+    for (const pareja of shuffledParejas) {
+      this.parejaService.actualizarPareja(pareja.id, { grupo_fk: this.grupos[groupIndex].id }).subscribe(
+        (updatedPareja) => {
+          console.log('Pareja asignada al grupo:', updatedPareja);
+          pareja.grupo_fk = this.grupos[groupIndex].id;
+          groupIndex = (groupIndex + 1) % this.grupos.length;
+        },
+        (error: HttpErrorResponse) => {
+          console.error('Error al asignar pareja al grupo', error);
+        }
+      );
+    }
+
+    // Una vez asignadas las parejas a los grupos, crea los partidos
+    this.createPartidos();
   }
 
   createPartidos() {
@@ -163,3 +195,4 @@ export class AmericanoComponent implements OnInit {
     return pareja ? pareja.nombre_pareja : 'Desconocido';
   }
 }
+
