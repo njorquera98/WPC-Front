@@ -1,27 +1,34 @@
 <!-- Mostrar la fecha de inicio del torneo -->
-<div>
+<div class="torneo-info">
   <h1>Torneo Americano</h1>
-  <p><strong>Fecha de Inicio del Torneo:</strong> {{ fechaInicioTorneo | date:'M/dd/yy' }}</p>
+  <p>Fecha de inicio del torneo: {{ fechaInicioTorneo | date:'short' }}</p>
 </div>
 
 <!-- Mostrar los grupos -->
-<div *ngFor="let grupo of grupos">
+<div *ngFor="let grupo of grupos" class="grupo-section">
   <h2>{{ grupo.nombreGrupo }}</h2>
 
-  <!-- Mostrar las parejas en el grupo -->
-  <div>
-    <h3>Parejas</h3>
-    <ul>
-      <li *ngFor="let pareja of getParejasPorGrupo(grupo)">
-        {{ pareja.nombre_pareja }}
-      </li>
-    </ul>
+  <!-- Tabla de parejas en el grupo -->
+  <div class="grupo-table-container">
+    <h3>Parejas en el Grupo</h3>
+    <table class="grupo-table">
+      <thead>
+        <tr>
+          <th>Parejas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let pareja of getParejasPorGrupo(grupo)">
+          <td>{{ pareja.nombre_pareja }}</td>
+        </tr>
+      </tbody>
+    </table>
   </div>
 
-  <!-- Mostrar los partidos en el grupo -->
-  <div>
-    <h3>Partidos</h3>
-    <table>
+  <!-- Tabla de partidos en el grupo -->
+  <div class="grupo-table-container">
+    <h3>Partidos en el Grupo</h3>
+    <table class="grupo-table">
       <thead>
         <tr>
           <th>Fecha</th>
@@ -32,7 +39,7 @@
       </thead>
       <tbody>
         <tr *ngFor="let partido of getPartidosPorGrupo(grupo)">
-          <td>{{ partido.fecha | date:'M/dd/yy h:mm a' }}</td>
+          <td>{{ partido.fecha | date:'MM/dd/yyyy h:mm a' }}</td>
           <td>{{ obtenerNombrePareja(partido.pareja1_fk) }}</td>
           <td>{{ obtenerNombrePareja(partido.pareja2_fk) }}</td>
           <td>{{ partido.resultadoPareja1 }} - {{ partido.resultadoPareja2 }}</td>

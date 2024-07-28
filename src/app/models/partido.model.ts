@@ -7,6 +7,6 @@ export interface Partido {
   pareja2_fk: number;
   grupo_fk: number;
   americano_fk: number;
-  cancha_fk: number;
+  cancha_fk?: number;
 }
 

@@ -16,7 +16,7 @@ export class GrupoService {
     return this.http.post<Grupo>(this.apiUrl, grupo);
   }
 
-  obtenerGruposPorAmericano(americanoId: number): Observable<Grupo[]> {
+  getGruposPorAmericano(americanoId: number): Observable<Grupo[]> {
     return this.http.get<Grupo[]>(`${this.apiUrl}/americano/${americanoId}`);
   }
 }

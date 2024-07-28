@@ -6,9 +6,11 @@ import { GrupoService } from '../services/grupo.service';
 import { Pareja } from '../models/pareja.model';
 import { Grupo } from '../models/grupo.model';
 import { Router } from '@angular/router';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Observable } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
 import { Cancha } from '../models/cancha.model';
+import { PartidoService } from '../services/partido.service';
+import { Partido } from '../models/partido.model'; // Asegúrate de importar el modelo Partido
 
 @Component({
   selector: 'app-fixture',
@@ -29,7 +31,8 @@ export class FixtureComponent implements OnInit {
     private parejaService: ParejaService,
     private americanoService: AmericanoService,
     private canchaService: CanchaService,
-    private grupoService: GrupoService
+    private grupoService: GrupoService,
+    private partidoService: PartidoService
   ) { }
 
   ngOnInit() {
@@ -98,9 +101,9 @@ export class FixtureComponent implements OnInit {
                 }),
                 finalize(() => {
                   // Obtener los grupos creados
-                  this.grupoService.obtenerGruposPorAmericano(americanoId).subscribe(
+                  this.grupoService.getGruposPorAmericano(americanoId).subscribe(
                     (grupos: Grupo[]) => {
-                      console.log('Grupos obtenidos:', grupos); // Agregar esta línea para depuración
+                      console.log('Grupos obtenidos:', grupos);
                       if (!grupos.length) {
                         console.error('No se encontraron grupos para asignar a las parejas');
                         return;
@@ -121,13 +124,18 @@ export class FixtureComponent implements OnInit {
                           americano_fk: americanoId,
                           grupo_fk: grupoFk
                         };
+                        console.log(`Asignando grupo_fk: ${grupoFk} a la pareja con nombre: ${pareja.nombre}`);
                         return this.parejaService.nuevaPareja(nuevaPareja);
                       }).filter(Boolean);  // Filtra los valores undefined
 
                       forkJoin(parejasObservables)
                         .pipe(
+                          catchError(error => {
+                            console.error('Error al agregar las parejas', error);
+                            throw error;
+                          }),
                           finalize(() => {
-                            this.router.navigate(['/americano', americanoId]);
+                            this.crearPartidos(americanoId, grupos);
                           })
                         )
                         .subscribe(
@@ -151,6 +159,56 @@ export class FixtureComponent implements OnInit {
           }
         }
       );
+  }
+
+  crearPartidos(americanoId: number, grupos: Grupo[]) {
+    this.parejaService.obtenerParejasPorAmericano(americanoId).subscribe(
+      (parejas: Pareja[]) => {
+        console.log('Parejas en el torneo:', parejas);
+
+        const partidosObservables: Observable<any>[] = [];
+
+        grupos.forEach(grupo => {
+          const parejasEnGrupo = parejas.filter(pareja => pareja.grupo_fk === grupo.id);
+          console.log(`Parejas en grupo ${grupo.id}: `, parejasEnGrupo);
+
+          for (let i = 0; i < parejasEnGrupo.length; i++) {
+            for (let j = i + 1; j < parejasEnGrupo.length; j++) {
+              const partido: Partido = {
+                id: undefined,
+                resultadoPareja1: undefined,
+                resultadoPareja2: undefined,
+                fecha: new Date(),  // Ajusta esto según tu lógica de fechas
+                pareja1_fk: parejasEnGrupo[i].id!,
+                pareja2_fk: parejasEnGrupo[j].id!,
+                grupo_fk: grupo.id!,
+                americano_fk: americanoId,
+                cancha_fk: 0  // Ajusta esto si tienes lógica para asignar canchas
+              };
+              partidosObservables.push(this.partidoService.crearPartido(partido));
+            }
+          }
+        });
+
+        forkJoin(partidosObservables)
+          .pipe(
+            finalize(() => {
+              this.router.navigate(['/americano', americanoId]);
+            })
+          )
+          .subscribe(
+            results => {
+              console.log('Todos los partidos fueron creados: ', results);
+            },
+            error => {
+              console.error('Error al crear los partidos', error);
+            }
+          );
+      },
+      error => {
+        console.error('Error al obtener las parejas', error);
+      }
+    );
   }
 }
 

@@ -16,6 +16,10 @@ export class PartidoService {
   crearPartido(partido: Partido): Observable<Partido> {
     return this.http.post<Partido>(this.apiUrl, partido);
   }
+
+  obtenerPartidosPorAmericano(americanoId: number): Observable<Partido[]> {
+    return this.http.get<Partido[]>(`${this.apiUrl}/americano/${americanoId}`);
+  }
 }
 
 
