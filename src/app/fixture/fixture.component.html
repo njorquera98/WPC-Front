@@ -17,7 +17,7 @@
             <div class="form-group">
               <label>Canchas Disponibles:</label>
               <div *ngFor="let cancha of canchas; let i = index">
-                <input class="form-check-input" type="checkbox" [value]="cancha.numeroCancha" [id]="'cancha' + i" (change)="onCanchasChange(cancha.numeroCancha, $event)">
+                <input class="form-check-input" type="checkbox" [value]="cancha.id" [id]="'cancha' + i" (change)="onCanchasChange(cancha.id!, $event)" >
                 <label class="form-check-label" [for]="'cancha' + i">
                   {{ cancha.numeroCancha }}
                 </label>

@@ -10,7 +10,7 @@ import { catchError, finalize } from 'rxjs/operators';
 import { Pareja } from '../models/pareja.model';
 import { Grupo } from '../models/grupo.model';
 import { Cancha } from '../models/cancha.model';
-import { Partido } from '../models/partido.model'; // Asegúrate de importar el modelo Partido
+import { Partido } from '../models/partido.model';
 
 @Component({
   selector: 'app-fixture',
@@ -44,9 +44,11 @@ export class FixtureComponent implements OnInit {
       (canchas: Cancha[]) => {
         this.canchas = canchas;
         this.selectedCanchas = canchas.reduce((acc, cancha) => {
-          acc[cancha.numeroCancha] = false;
+          if (cancha.id !== undefined) { // Asegúrate de que cancha.id no sea undefined
+            acc[cancha.id] = false;
+          }
           return acc;
-        }, {} as { [key: string]: boolean });
+        }, {} as { [key: number]: boolean });
       },
       error => {
         console.error('Error al cargar las canchas', error);
@@ -58,19 +60,18 @@ export class FixtureComponent implements OnInit {
     this.parejas = Array(this.cantidadParejas).fill({}).map((_, i) => ({ nombre: '' }));
   }
 
-  onCanchasChange(cancha: string, event: any) {
-    this.selectedCanchas[cancha] = event.target.checked;
+  onCanchasChange(canchaId: number, event: any) {
+    if (canchaId !== undefined) {
+      this.selectedCanchas[canchaId] = event.target.checked;
+    }
   }
 
+
+
   onSubmit() {
-    const canchasSeleccionadas = Object.keys(this.selectedCanchas).filter(cancha => this.selectedCanchas[cancha]);
-    const torneo = {
-      nombre: this.nombreAmericano,
-      fechaInicio: this.fechaInicio,
-      cantidadParejas: this.cantidadParejas,
-      canchas: canchasSeleccionadas,
-      cantidadGrupos: this.cantidadGrupos
-    };
+    const canchasSeleccionadas = Object.keys(this.selectedCanchas)
+      .filter(canchaId => this.selectedCanchas[+canchaId]) // Asegúrate de convertir la clave a número
+      .map(canchaId => +canchaId); // Convierte cada clave a número
 
     this.americanoService.nuevoAmericano(this.nombreAmericano, this.fechaInicio, this.cantidadGrupos)
       .pipe(
@@ -84,7 +85,6 @@ export class FixtureComponent implements OnInit {
           if (response && response.id) {
             const americanoId = response.id;
 
-            // Crear los grupos
             const gruposObservables = Array.from({ length: this.cantidadGrupos }, (_, i) => {
               const grupo: Grupo = {
                 americano_fk: americanoId,
@@ -100,7 +100,6 @@ export class FixtureComponent implements OnInit {
                   throw error;
                 }),
                 finalize(() => {
-                  // Obtener los grupos creados
                   this.grupoService.getGruposPorAmericano(americanoId).subscribe(
                     (grupos: Grupo[]) => {
                       console.log('Grupos obtenidos:', grupos);
@@ -115,7 +114,7 @@ export class FixtureComponent implements OnInit {
                         const grupo = grupos[grupoIndex];
                         if (!grupo || grupo.id === undefined) {
                           console.error('No se encontró el grupo para la pareja');
-                          return;  // Maneja el caso donde el grupo no se encuentra
+                          return;
                         }
                         const grupoFk = grupo.id;
                         const nuevaPareja: Pareja = {
@@ -126,7 +125,7 @@ export class FixtureComponent implements OnInit {
                         };
                         console.log(`Asignando grupo_fk: ${grupoFk} a la pareja con nombre: ${pareja.nombre}`);
                         return this.parejaService.nuevaPareja(nuevaPareja);
-                      }).filter(Boolean);  // Filtra los valores undefined
+                      }).filter(Boolean);
 
                       forkJoin(parejasObservables)
                         .pipe(
@@ -172,7 +171,7 @@ export class FixtureComponent implements OnInit {
     return parejas;
   }
 
-  crearPartidos(americanoId: number, grupos: Grupo[], canchasSeleccionadas: string[]) {
+  crearPartidos(americanoId: number, grupos: Grupo[], canchasSeleccionadas: number[]) {
     this.parejaService.obtenerParejasPorAmericano(americanoId).subscribe(
       (parejas: Pareja[]) => {
         console.log('Parejas en el torneo:', parejas);
@@ -185,25 +184,36 @@ export class FixtureComponent implements OnInit {
           const parejasEnGrupo = parejasConGrupos.filter(pareja => pareja.grupo_fk === grupo.id);
           console.log(`Parejas en grupo ${grupo.id}: `, parejasEnGrupo);
 
+          if (parejasEnGrupo.length < 2) {
+            console.warn(`El grupo ${grupo.id} no tiene suficientes parejas para crear partidos.`);
+            return;
+          }
+
           for (let i = 0; i < parejasEnGrupo.length; i++) {
             for (let j = i + 1; j < parejasEnGrupo.length; j++) {
+              const canchaSeleccionada = canchasSeleccionadas[canchaIndex];
+
+              if (canchaSeleccionada === undefined) {
+                console.error('No hay cancha seleccionada disponible');
+                continue;
+              }
+
               const partido: Partido = {
                 id: undefined,
-                resultadoPareja1: undefined,
-                resultadoPareja2: undefined,
-                fecha: new Date(this.fechaInicio),  // Usa la fecha ingresada
+                resultadoPareja1: 0,
+                resultadoPareja2: 0,
+                fecha: new Date(this.fechaInicio),
                 pareja1_fk: parejasEnGrupo[i].id!,
                 pareja2_fk: parejasEnGrupo[j].id!,
                 grupo_fk: grupo.id!,
                 americano_fk: americanoId,
-                cancha_fk: +canchasSeleccionadas[canchaIndex]  // Asigna la cancha seleccionada
+                cancha_fk: canchaSeleccionada  // Usa el ID de la cancha seleccionada
               };
 
               console.log('Creando partido:', partido);
 
               partidosObservables.push(this.partidoService.crearPartido(partido));
 
-              // Rota las canchas seleccionadas
               canchaIndex = (canchaIndex + 1) % canchasSeleccionadas.length;
             }
           }
@@ -234,5 +244,6 @@ export class FixtureComponent implements OnInit {
       }
     );
   }
+
 }
 
