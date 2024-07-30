@@ -3,13 +3,13 @@ import { ParejaService } from '../services/pareja.service';
 import { AmericanoService } from '../services/americano.service';
 import { CanchaService } from '../services/cancha.service';
 import { GrupoService } from '../services/grupo.service';
-import { Pareja } from '../models/pareja.model';
-import { Grupo } from '../models/grupo.model';
+import { PartidoService } from '../services/partido.service';
 import { Router } from '@angular/router';
 import { forkJoin, Observable } from 'rxjs';
 import { catchError, finalize } from 'rxjs/operators';
+import { Pareja } from '../models/pareja.model';
+import { Grupo } from '../models/grupo.model';
 import { Cancha } from '../models/cancha.model';
-import { PartidoService } from '../services/partido.service';
 import { Partido } from '../models/partido.model'; // Asegúrate de importar el modelo Partido
 
 @Component({
@@ -135,7 +135,7 @@ export class FixtureComponent implements OnInit {
                             throw error;
                           }),
                           finalize(() => {
-                            this.crearPartidos(americanoId, grupos);
+                            this.crearPartidos(americanoId, grupos, canchasSeleccionadas);
                           })
                         )
                         .subscribe(
@@ -161,15 +161,28 @@ export class FixtureComponent implements OnInit {
       );
   }
 
-  crearPartidos(americanoId: number, grupos: Grupo[]) {
+  asignarParejasAGrupos(parejas: Pareja[], grupos: Grupo[]): Pareja[] {
+    let grupoIndex = 0;
+    parejas.forEach(pareja => {
+      pareja.grupo_fk = grupos[grupoIndex].id;
+      console.log(`Asignando grupo_fk: ${pareja.grupo_fk} a la pareja con nombre: ${pareja.nombre_pareja}`);
+      grupoIndex = (grupoIndex + 1) % grupos.length;
+    });
+    console.log('Todas las parejas fueron agregadas: ', parejas);
+    return parejas;
+  }
+
+  crearPartidos(americanoId: number, grupos: Grupo[], canchasSeleccionadas: string[]) {
     this.parejaService.obtenerParejasPorAmericano(americanoId).subscribe(
       (parejas: Pareja[]) => {
         console.log('Parejas en el torneo:', parejas);
 
+        const parejasConGrupos = this.asignarParejasAGrupos(parejas, grupos);
         const partidosObservables: Observable<any>[] = [];
+        let canchaIndex = 0;
 
         grupos.forEach(grupo => {
-          const parejasEnGrupo = parejas.filter(pareja => pareja.grupo_fk === grupo.id);
+          const parejasEnGrupo = parejasConGrupos.filter(pareja => pareja.grupo_fk === grupo.id);
           console.log(`Parejas en grupo ${grupo.id}: `, parejasEnGrupo);
 
           for (let i = 0; i < parejasEnGrupo.length; i++) {
@@ -178,17 +191,28 @@ export class FixtureComponent implements OnInit {
                 id: undefined,
                 resultadoPareja1: undefined,
                 resultadoPareja2: undefined,
-                fecha: new Date(),  // Ajusta esto según tu lógica de fechas
+                fecha: new Date(this.fechaInicio),  // Usa la fecha ingresada
                 pareja1_fk: parejasEnGrupo[i].id!,
                 pareja2_fk: parejasEnGrupo[j].id!,
                 grupo_fk: grupo.id!,
                 americano_fk: americanoId,
-                cancha_fk: 0  // Ajusta esto si tienes lógica para asignar canchas
+                cancha_fk: +canchasSeleccionadas[canchaIndex]  // Asigna la cancha seleccionada
               };
+
+              console.log('Creando partido:', partido);
+
               partidosObservables.push(this.partidoService.crearPartido(partido));
+
+              // Rota las canchas seleccionadas
+              canchaIndex = (canchaIndex + 1) % canchasSeleccionadas.length;
             }
           }
         });
+
+        if (partidosObservables.length === 0) {
+          console.error('No se han encontrado parejas en los grupos para crear partidos');
+          return;
+        }
 
         forkJoin(partidosObservables)
           .pipe(
