@@ -16,6 +16,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 })
 export class AmericanoComponent implements OnInit {
   americanoId!: number;
+  nombreAmericano: string = ''; // Nueva propiedad para almacenar el nombre
   grupos: (Grupo & { parejas?: Pareja[], partidos?: Partido[] })[] = [];
   parejas: Pareja[] = [];
   partidos: Partido[] = [];
@@ -47,6 +48,7 @@ export class AmericanoComponent implements OnInit {
       (americano) => {
         console.log('Americano cargado:', americano);
         this.fechaInicioTorneo = new Date(americano.fechaInicio);
+        this.nombreAmericano = americano.nombre; // Almacenar el nombre del Americano
         this.loadGrupos();
       },
       (error: HttpErrorResponse) => {
@@ -69,37 +71,47 @@ export class AmericanoComponent implements OnInit {
     );
   }
 
-  loadParejas() {
+  loadParejas(): void {
     this.parejaService.obtenerParejasPorAmericano(this.americanoId).subscribe(
       (parejas: Pareja[]) => {
         console.log('Parejas cargadas:', parejas);
         this.parejas = parejas;
-        // Asignar parejas a los grupos
-        this.grupos.forEach(grupo => {
-          grupo.parejas = this.parejas.filter(pareja => pareja.grupo_fk === grupo.id);
-        });
+        this.asignarParejasAGrupos();
         this.loadPartidos(); // Cargar partidos después de cargar las parejas
       },
-      (error: HttpErrorResponse) => {
+      (error: any) => {
         console.error('Error al cargar las parejas', error);
       }
     );
   }
 
-  loadPartidos() {
+  asignarParejasAGrupos(): void {
+    this.grupos.forEach(grupo => {
+      grupo.parejas = this.parejas.filter(pareja => pareja.grupo_fk === grupo.id);
+    });
+  }
+
+  loadPartidos(): void {
     this.partidoService.obtenerPartidosPorAmericano(this.americanoId).subscribe(
       (partidos: Partido[]) => {
         console.log('Partidos cargados:', partidos);
-        this.partidos = partidos;
-        // Asignar partidos a los grupos
-        this.grupos.forEach(grupo => {
-          grupo.partidos = this.partidos.filter(partido => partido.grupo_fk === grupo.id);
-        });
+        this.partidos = partidos.map(partido => ({
+          ...partido,
+          pareja1: this.parejas.find(pareja => pareja.id === partido.pareja1_fk)!,
+          pareja2: this.parejas.find(pareja => pareja.id === partido.pareja2_fk)!,
+        }));
+        this.asignarPartidosAGrupos();
       },
-      (error: HttpErrorResponse) => {
+      (error: any) => {
         console.error('Error al cargar los partidos', error);
       }
     );
+  }
+
+  asignarPartidosAGrupos(): void {
+    this.grupos.forEach(grupo => {
+      grupo.partidos = this.partidos.filter(partido => partido.grupo_fk === grupo.id);
+    });
   }
 
   calcularHorarioPartido(partido: Partido): string {
@@ -109,17 +121,9 @@ export class AmericanoComponent implements OnInit {
     return inicio.toLocaleTimeString();
   }
 
-  getParejasPorGrupo(grupo: Grupo & { parejas?: Pareja[] }): Pareja[] {
-    return grupo.parejas || [];
-  }
-
-  getPartidosPorGrupo(grupo: Grupo & { partidos?: Partido[] }): Partido[] {
-    return grupo.partidos || [];
-  }
-
   obtenerNombrePareja(parejaId: number): string {
     const pareja = this.parejas.find(p => p.id === parejaId);
-    return pareja ? pareja.nombre_pareja : 'Desconocido';
+    return pareja ? pareja.nombre_pareja : 'Nombre no disponible';
   }
 }
 

@@ -1,51 +1,32 @@
-<!-- Mostrar la fecha de inicio del torneo -->
-<div class="torneo-info">
-  <h1>Torneo Americano</h1>
-  <p>Fecha de inicio del torneo: {{ fechaInicioTorneo | date:'short' }}</p>
+<div *ngIf="grupos.length">
+  <h2>Detalles del Americanos</h2>
+  <p>
+    <strong>Nombre del Torneo:</strong> {{ nombreAmericano || 'Nombre no disponible' }}
+  </p>
+  <p><strong>Fecha de Inicio:</strong> {{ fechaInicioTorneo | date:'fullDate' }}</p>
+  <div *ngFor="let grupo of grupos">
+    <h3>{{ grupo.nombreGrupo }}</h3>
+    <div *ngIf="grupo.parejas?.length">
+      <h4>Parejas</h4>
+      <ul>
+        <li *ngFor="let pareja of grupo.parejas">
+          {{ pareja.nombre_pareja }}
+        </li>
+      </ul>
+    </div>
+<div *ngIf="partidos.length">
+  <h2>Partidoas</h2>
+  <ul>
+    <li *ngFor="let partido of partidos">
+      <strong>Pareja 1:</strong> {{ obtenerNombrePareja(partido.pareja1_fk) }}
+      vs
+      <strong>Pareja 2:</strong> {{ obtenerNombrePareja(partido.pareja2_fk) }}
+      -
+      <strong>Hora:</strong> {{ partido.fecha | date:'shortTime' }}
+    </li>
+  </ul>
 </div>
 
-<!-- Mostrar los grupos -->
-<div *ngFor="let grupo of grupos" class="grupo-section">
-  <h2>{{ grupo.nombreGrupo }}</h2>
-
-  <!-- Tabla de parejas en el grupo -->
-  <div class="grupo-table-container">
-    <h3>Parejas en el Grupo</h3>
-    <table class="grupo-table">
-      <thead>
-        <tr>
-          <th>Parejas</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let pareja of getParejasPorGrupo(grupo)">
-          <td>{{ pareja.nombre_pareja }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
-
-  <!-- Tabla de partidos en el grupo -->
-  <div class="grupo-table-container">
-    <h3>Partidos en el Grupo</h3>
-    <table class="grupo-table">
-      <thead>
-        <tr>
-          <th>Fecha</th>
-          <th>Pareja 1</th>
-          <th>Pareja 2</th>
-          <th>Resultado</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let partido of getPartidosPorGrupo(grupo)">
-          <td>{{ partido.fecha | date:'MM/dd/yyyy h:mm a' }}</td>
-          <td>{{ obtenerNombrePareja(partido.pareja1_fk) }}</td>
-          <td>{{ obtenerNombrePareja(partido.pareja2_fk) }}</td>
-          <td>{{ partido.resultadoPareja1 }} - {{ partido.resultadoPareja2 }}</td>
-        </tr>
-      </tbody>
-    </table>
-  </div>
 </div>
+<!-- americano.component.html -->
 
