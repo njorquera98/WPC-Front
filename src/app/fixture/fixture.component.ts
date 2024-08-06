@@ -24,7 +24,7 @@ export class FixtureComponent implements OnInit {
   fechaInicio: string = '';
   parejas: { nombre: string }[] = [];
   canchas: Cancha[] = [];
-  selectedCanchas: { [key: string]: boolean } = {};
+  selectedCanchas: { [key: number]: boolean } = {};
 
   constructor(
     private router: Router,
@@ -57,7 +57,7 @@ export class FixtureComponent implements OnInit {
   }
 
   onCantidadParejasChange() {
-    this.parejas = Array(this.cantidadParejas).fill({}).map((_, i) => ({ nombre: '' }));
+    this.parejas = Array(this.cantidadParejas).fill({ nombre: '' }).map((_, i) => ({ nombre: '' }));
   }
 
   onCanchasChange(canchaId: number, event: any) {
@@ -65,8 +65,6 @@ export class FixtureComponent implements OnInit {
       this.selectedCanchas[canchaId] = event.target.checked;
     }
   }
-
-
 
   onSubmit() {
     const canchasSeleccionadas = Object.keys(this.selectedCanchas)
@@ -161,14 +159,19 @@ export class FixtureComponent implements OnInit {
   }
 
   asignarParejasAGrupos(parejas: Pareja[], grupos: Grupo[]): Pareja[] {
+    // Mezclar aleatoriamente las parejas
+    const parejasAleatorias = parejas.sort(() => Math.random() - 0.5);
+
+    // Asignar aleatoriamente a los grupos
     let grupoIndex = 0;
-    parejas.forEach(pareja => {
+    parejasAleatorias.forEach(pareja => {
       pareja.grupo_fk = grupos[grupoIndex].id;
       console.log(`Asignando grupo_fk: ${pareja.grupo_fk} a la pareja con nombre: ${pareja.nombre_pareja}`);
       grupoIndex = (grupoIndex + 1) % grupos.length;
     });
-    console.log('Todas las parejas fueron agregadas: ', parejas);
-    return parejas;
+
+    console.log('Todas las parejas fueron agregadas: ', parejasAleatorias);
+    return parejasAleatorias;
   }
 
   crearPartidos(americanoId: number, grupos: Grupo[], canchasSeleccionadas: number[]) {
@@ -176,28 +179,37 @@ export class FixtureComponent implements OnInit {
       (parejas: Pareja[]) => {
         console.log('Parejas en el torneo:', parejas);
 
+        // Asignar los grupos a las parejas
         const parejasConGrupos = this.asignarParejasAGrupos(parejas, grupos);
+
+        // Inicializar la lista de observables para los partidos
         const partidosObservables: Observable<any>[] = [];
         let canchaIndex = 0;
 
+        // Iterar sobre cada grupo
         grupos.forEach(grupo => {
+          // Filtrar las parejas que pertenecen al grupo actual
           const parejasEnGrupo = parejasConGrupos.filter(pareja => pareja.grupo_fk === grupo.id);
           console.log(`Parejas en grupo ${grupo.id}: `, parejasEnGrupo);
 
+          // Verificar que haya suficientes parejas para crear partidos
           if (parejasEnGrupo.length < 2) {
             console.warn(`El grupo ${grupo.id} no tiene suficientes parejas para crear partidos.`);
             return;
           }
 
+          // Crear partidos entre todas las combinaciones de parejas en el grupo
           for (let i = 0; i < parejasEnGrupo.length; i++) {
             for (let j = i + 1; j < parejasEnGrupo.length; j++) {
               const canchaSeleccionada = canchasSeleccionadas[canchaIndex];
 
+              // Verificar que haya una cancha seleccionada
               if (canchaSeleccionada === undefined) {
                 console.error('No hay cancha seleccionada disponible');
                 continue;
               }
 
+              // Crear el objeto partido
               const partido: Partido = {
                 id: undefined,
                 resultadoPareja1: 0,
@@ -212,38 +224,46 @@ export class FixtureComponent implements OnInit {
 
               console.log('Creando partido:', partido);
 
+              // Agregar el observable para la creación del partido
               partidosObservables.push(this.partidoService.crearPartido(partido));
 
+              // Avanzar al siguiente índice de cancha
               canchaIndex = (canchaIndex + 1) % canchasSeleccionadas.length;
             }
           }
         });
 
+        // Verificar que se han creado observables para todos los partidos
         if (partidosObservables.length === 0) {
           console.error('No se han encontrado parejas en los grupos para crear partidos');
           return;
         }
 
+        // Realizar todas las peticiones para crear los partidos en paralelo
         forkJoin(partidosObservables)
           .pipe(
+            catchError(error => {
+              console.error('Error al crear los partidos', error);
+              throw error;
+            }),
             finalize(() => {
+              console.log('Todos los partidos han sido creados');
               this.router.navigate(['/americano', americanoId]);
             })
           )
           .subscribe(
             results => {
-              console.log('Todos los partidos fueron creados: ', results);
+              console.log('Resultados de la creación de partidos: ', results);
             },
             error => {
-              console.error('Error al crear los partidos', error);
+              console.error('Error en la creación de partidos', error);
             }
           );
       },
       error => {
-        console.error('Error al obtener las parejas', error);
+        console.error('Error al obtener las parejas del torneo', error);
       }
     );
   }
-
 }
 
