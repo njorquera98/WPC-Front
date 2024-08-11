@@ -3,6 +3,7 @@ import { environment } from "../../environments/environment";
 import { Grupo } from "../models/grupo.model";
 import { Observable } from "rxjs";
 import { Injectable } from "@angular/core";
+import { Pareja } from "../models/pareja.model";
 
 @Injectable({
   providedIn: 'root'
@@ -18,6 +19,10 @@ export class GrupoService {
 
   getGruposPorAmericano(americanoId: number): Observable<Grupo[]> {
     return this.http.get<Grupo[]>(`${this.apiUrl}/americano/${americanoId}`);
+  }
+
+  getParejasPorAmericano(americanoId: number): Observable<Pareja[]> {
+    return this.http.get<Pareja[]>(`${this.apiUrl}/parejas/americano/${americanoId}`);
   }
 }
 

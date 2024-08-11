@@ -6,6 +6,7 @@ import { Grupo } from '../models/grupo.model';
 import { Partido } from '../models/partido.model';
 import { AmericanoService } from '../services/americano.service';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Pareja } from '../models/pareja.model';
 
 @Component({
   selector: 'app-americano',
@@ -59,13 +60,36 @@ export class AmericanoComponent implements OnInit {
         console.log('Grupos cargados:', grupos);
         this.grupos = grupos.map(grupo => ({
           ...grupo,
-          parejas: grupo.parejas || [],
-          partidos: grupo.partidos || []
+          parejas: [],
+          partidos: []
         }));
-        this.loadPartidos();
+        this.loadParejas();
       },
       (error: HttpErrorResponse) => {
         console.error('Error al cargar los grupos', error);
+      }
+    );
+  }
+
+  loadParejas() {
+    this.grupoService.getParejasPorAmericano(this.americanoId).subscribe(
+      (parejas: Pareja[]) => {
+        parejas.forEach((pareja: Pareja) => {
+          const grupoId = pareja.grupo?.id;
+          if (grupoId !== undefined) {
+            const grupo = this.grupos.find(g => g.id === grupoId);
+            if (grupo) {
+              if (!grupo.parejas) {
+                grupo.parejas = [];
+              }
+              grupo.parejas.push(pareja);
+            }
+          }
+        });
+        this.loadPartidos();
+      },
+      (error: HttpErrorResponse) => {
+        console.error('Error al cargar las parejas', error);
       }
     );
   }
@@ -74,11 +98,14 @@ export class AmericanoComponent implements OnInit {
     this.partidoService.getPartidosPorAmericano(this.americanoId).subscribe(
       (partidos: Partido[]) => {
         console.log('Partidos cargados:', partidos);
-        partidos.forEach(partido => {
+        partidos.forEach((partido: Partido) => {
           const grupoId = partido.grupo?.id;
-          if (grupoId !== undefined && partido.pareja1?.nombre_pareja && partido.pareja2?.nombre_pareja) {
+          if (grupoId !== undefined) {
             const grupo = this.grupos.find(g => g.id === grupoId);
-            if (grupo && grupo.partidos) {
+            if (grupo) {
+              if (!grupo.partidos) {
+                grupo.partidos = [];
+              }
               grupo.partidos.push(partido);
             }
           }

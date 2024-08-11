@@ -2,7 +2,7 @@
   <h1>Detalles del Americano</h1>
 
   <div>
-    <h2>Nombre del Torneo:</h2>
+    <h2>Nombre del Americano:</h2>
     <p>{{ nombreAmericano }}</p>
   </div>
 
@@ -10,13 +10,24 @@
     <h2>Fecha de Inicio:</h2>
     <p>{{ fechaInicioTorneo | date:'fullDate' }}</p>
   </div>
+<div *ngFor="let grupo of grupos">
+  <h3>{{ grupo.nombreGrupo }}</h3>
+  <h4>Parejas:</h4>
+  <ul>
+    <li *ngFor="let pareja of grupo.parejas">{{ pareja.nombre_pareja }}</li>
+  </ul>
+  <h4>Partidos:</h4>
+  <ul>
+    <li *ngFor="let partido of grupo.partidos">{{ partido.pareja1?.nombre_pareja }} vs {{ partido.pareja2?.nombre_pareja }}</li>
+  </ul>
+</div>
 
+  <!--
   <div *ngIf="grupos && grupos.length > 0">
     <h2>Grupos:</h2>
     <div *ngFor="let grupo of grupos">
       <h3>{{ grupo.nombreGrupo }}</h3>
 
-      <!-- Parejas en el grupo -->
       <div *ngIf="grupo.parejas && grupo.parejas.length > 0">
         <h4>Parejas:</h4>
         <ul>
@@ -29,7 +40,6 @@
         No hay parejas en este grupo.
       </div>
 
-      <!-- Partidos en el grupo -->
       <div *ngIf="grupo.partidos && grupo.partidos.length > 0">
         <h4>Partidos:</h4>
         <ul>
@@ -50,4 +60,10 @@
     No hay grupos en este torneo.
   </div>
 </div>
+-->
+
+
+
+
+
 
