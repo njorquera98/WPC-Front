@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { GrupoService } from '../services/grupo.service';
 import { PartidoService } from '../services/partido.service';
@@ -18,6 +18,16 @@ export class AmericanoComponent implements OnInit {
   nombreAmericano: string = '';
   grupos: Grupo[] = [];
   fechaInicioTorneo!: Date;
+
+  pareja1Nombre: string = '';
+  pareja2Nombre: string = '';
+  resultadoPareja1!: number;
+  resultadoPareja2!: number;
+
+  selectedPartidoId?: number;
+  partido: Partido | undefined;
+
+  @Output() partidoSeleccionado = new EventEmitter<number>();
 
   constructor(
     private route: ActivatedRoute,
@@ -54,7 +64,6 @@ export class AmericanoComponent implements OnInit {
   }
 
   loadGrupos() {
-    console.log("Americano ID antes del service", this.americanoId);
     this.grupoService.getGruposPorAmericano(this.americanoId).subscribe(
       (grupos: Grupo[]) => {
         console.log('Grupos cargados:', grupos);
@@ -117,11 +126,56 @@ export class AmericanoComponent implements OnInit {
     );
   }
 
-  calcularHorarioPartido(partido: Partido): string {
-    const inicio = new Date(this.fechaInicioTorneo);
-    const diferencia = (this.grupos.flatMap(g => g.partidos).indexOf(partido) + 1) * 20; // Ajusta según la lógica
-    inicio.setMinutes(inicio.getMinutes() + diferencia);
-    return inicio.toLocaleTimeString();
+
+  modificarResultado(partido: Partido): void {
+    if (partido && partido.pareja1 && partido.pareja2 && partido.id !== undefined) {
+      this.cargarPartido(partido.id);
+      this.pareja1Nombre = partido.pareja1.nombre_pareja || '';
+      this.pareja2Nombre = partido.pareja2.nombre_pareja || '';
+      this.resultadoPareja1 = partido.resultadoPareja1 || 0;
+      this.resultadoPareja2 = partido.resultadoPareja2 || 0;
+      this.selectedPartidoId = partido.id;
+      console.log('Modificar resultado para el partido con ID:', partido.id);
+    } else {
+      console.error('El partido, las parejas o el ID no están definidos');
+    }
   }
+
+
+  cargarPartido(id: number): void {
+    this.partidoService.getPartidoPorId(id).subscribe(
+      (partido: Partido) => {
+        this.partido = partido;
+        console.log('Partido cargado:', this.partido);
+        this.pareja1Nombre = partido.pareja1?.nombre_pareja || '';
+        this.pareja2Nombre = partido.pareja2?.nombre_pareja || '';
+        this.resultadoPareja1 = partido.resultadoPareja1 || 0;
+        this.resultadoPareja2 = partido.resultadoPareja2 || 0;
+      },
+      (error) => {
+        console.error('Error al cargar el partido:', error);
+      }
+    );
+  }
+
+  guardarCambios(): void {
+    if (this.selectedPartidoId !== undefined && this.partido) {
+      const partidoActualizado: Partido = {
+        ...this.partido,
+        resultadoPareja1: this.resultadoPareja1,
+        resultadoPareja2: this.resultadoPareja2
+      };
+      this.partidoService.actualizarPartido(this.selectedPartidoId, partidoActualizado).subscribe(
+        () => {
+          console.log('Partido actualizado con éxito');
+          this.loadPartidos(); // Vuelve a cargar los partidos después de actualizar
+        },
+        (error) => {
+          console.error('Error al actualizar el partido:', error);
+        }
+      );
+    }
+  }
+
 }
 

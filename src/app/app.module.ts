@@ -16,7 +16,7 @@ import { ParejaService } from './services/pareja.service';
     AppComponent,
     LoginComponent,
     FixtureComponent,
-    AmericanoComponent
+    AmericanoComponent,
   ],
   imports: [
     BrowserModule,

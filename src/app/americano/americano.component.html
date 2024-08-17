@@ -1,69 +1,90 @@
-<div *ngIf="nombreAmericano">
-  <h1>Detalles del Americano</h1>
+<div *ngIf="nombreAmericano" class="container mt-5">
+  <h1 class="text-center">Detalles del Americano</h1>
 
-  <div>
-    <h2>Nombre del Americano:</h2>
-    <p>{{ nombreAmericano }}</p>
+  <!-- Información del torneo -->
+  <div class="card mb-4">
+    <div class="card-body">
+      <h2 class="card-title">Nombre del Americano:</h2>
+      <p class="card-text">{{ nombreAmericano }}</p>
+      <h2 class="card-title">Fecha de Inicio:</h2>
+      <p class="card-text">{{ fechaInicioTorneo | date:'long' }}</p>
+    </div>
   </div>
 
-  <div>
-    <h2>Fecha de Inicio:</h2>
-    <p>{{ fechaInicioTorneo | date:'fullDate' }}</p>
-  </div>
-<div *ngFor="let grupo of grupos">
-  <h3>{{ grupo.nombreGrupo }}</h3>
-  <h4>Parejas:</h4>
-  <ul>
-    <li *ngFor="let pareja of grupo.parejas">{{ pareja.nombre_pareja }}</li>
-  </ul>
-  <h4>Partidos:</h4>
-  <ul>
-    <li *ngFor="let partido of grupo.partidos">{{ partido.pareja1?.nombre_pareja }} vs {{ partido.pareja2?.nombre_pareja }}</li>
-  </ul>
-</div>
-
-  <!--
-  <div *ngIf="grupos && grupos.length > 0">
-    <h2>Grupos:</h2>
-    <div *ngFor="let grupo of grupos">
+  <!-- Grupos y partidos -->
+  <div *ngFor="let grupo of grupos" class="card my-4">
+    <div class="card-header">
       <h3>{{ grupo.nombreGrupo }}</h3>
+    </div>
+    <div class="card-body">
+      <h4>Parejas:</h4>
+      <ul class="list-group">
+        <li *ngFor="let pareja of grupo.parejas" class="list-group-item">
+          {{ pareja.nombre_pareja }}
+        </li>
+      </ul>
 
-      <div *ngIf="grupo.parejas && grupo.parejas.length > 0">
-        <h4>Parejas:</h4>
-        <ul>
-          <li *ngFor="let pareja of grupo.parejas">
-            {{ pareja.nombre_pareja }}
-          </li>
-        </ul>
-      </div>
-      <div *ngIf="!(grupo.parejas && grupo.parejas.length > 0)">
-        No hay parejas en este grupo.
-      </div>
+      <h4 class="mt-4">Partidos:</h4>
+      <ul class="list-group">
+        <li *ngFor="let partido of grupo.partidos" class="list-group-item">
+          <ng-container *ngIf="partido.pareja1 && partido.pareja2">
+            <div>
+              <strong>{{ partido.pareja1.nombre_pareja }} vs {{ partido.pareja2.nombre_pareja }}</strong>
+            </div>
+            <div>
+              <span>Resultado: {{ partido.resultadoPareja1 }} - {{ partido.resultadoPareja2 }}</span>
+            </div>
+            <div>
+              <span>Fecha: {{ partido.fecha | date:'short' }}</span>
+            </div>
+            <div>
+              <span>Cancha: {{ partido.cancha?.numeroCancha }}</span>
+            </div>
+            <button
+              type="button"
+              class="btn btn-primary"
+              (click)="modificarResultado(partido)"
+              data-bs-toggle="modal"
+              data-bs-target="#modificarResultadoModal"
+            >
+              Modificar Resultados
+            </button>
+          </ng-container>
+        </li>
+      </ul>
 
-      <div *ngIf="grupo.partidos && grupo.partidos.length > 0">
-        <h4>Partidos:</h4>
-        <ul>
-          <li *ngFor="let partido of grupo.partidos">
-            <ng-container *ngIf="partido.pareja1 && partido.pareja2">
-              {{ partido.pareja1.nombre_pareja }} vs {{ partido.pareja2.nombre_pareja }}
-            </ng-container>
-          </li>
-        </ul>
-      </div>
-      <div *ngIf="!(grupo.partidos && grupo.partidos.length > 0)">
+      <div *ngIf="(grupo.partidos?.length || 0) === 0" class="mt-2">
         No hay partidos en este grupo.
       </div>
     </div>
   </div>
 
-  <div *ngIf="!(grupos && grupos.length > 0)">
-    No hay grupos en este torneo.
+  <!-- Modal para modificar resultados -->
+  <div class="modal fade" id="modificarResultadoModal" tabindex="-1" aria-labelledby="modificarResultadoModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="modificarResultadoModalLabel">Modificar Resultados del Partido</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div *ngIf="partido">
+            <h5>{{ pareja1Nombre }} vs {{ pareja2Nombre }}</h5>
+            <form (ngSubmit)="guardarCambios()">
+              <div class="mb-3">
+                <label for="resultadoPareja1" class="form-label">Resultado {{ pareja1Nombre }}</label>
+                <input type="number" class="form-control" id="resultadoPareja1" [(ngModel)]="resultadoPareja1" name="resultadoPareja1" required>
+              </div>
+              <div class="mb-3">
+                <label for="resultadoPareja2" class="form-label">Resultado {{ pareja2Nombre }}</label>
+                <input type="number" class="form-control" id="resultadoPareja2" [(ngModel)]="resultadoPareja2" name="resultadoPareja2" required>
+              </div>
+              <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
--->
-
-
-
-
-
 
