@@ -7,9 +7,10 @@ import { LoginComponent } from './login/login.component';
 import { FixtureComponent } from './fixture/fixture.component';
 import { FormsModule } from '@angular/forms';
 import { AmericanoComponent } from './americano/americano.component';
-import { HttpClientModule } from '@angular/common/http';
+import { provideHttpClient, withInterceptorsFromDi } from '@angular/common/http';
 import { AmericanoService } from './services/americano.service';
 import { ParejaService } from './services/pareja.service';
+import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
 @NgModule({
   declarations: [
@@ -18,13 +19,11 @@ import { ParejaService } from './services/pareja.service';
     FixtureComponent,
     AmericanoComponent,
   ],
-  imports: [
-    BrowserModule,
+  bootstrap: [AppComponent],
+  imports: [BrowserModule,
     AppRoutingModule,
     FormsModule,
-    HttpClientModule
-  ],
-  providers: [AmericanoService, ParejaService],
-  bootstrap: [AppComponent]
+    NgbModule],
+  providers: [AmericanoService, ParejaService, provideHttpClient(withInterceptorsFromDi())]
 })
 export class AppModule { }

@@ -1,3 +1,4 @@
+<!-- Contenedor principal -->
 <div *ngIf="nombreAmericano" class="container mt-5">
   <h1 class="text-center">Detalles del Americano</h1>
 
@@ -40,13 +41,7 @@
             <div>
               <span>Cancha: {{ partido.cancha?.numeroCancha }}</span>
             </div>
-            <button
-              type="button"
-              class="btn btn-primary"
-              (click)="modificarResultado(partido)"
-              data-bs-toggle="modal"
-              data-bs-target="#modificarResultadoModal"
-            >
+            <button type="button" class="btn btn-primary" (click)="modificarResultado(partido)">
               Modificar Resultados
             </button>
           </ng-container>
@@ -60,31 +55,27 @@
   </div>
 
   <!-- Modal para modificar resultados -->
-  <div class="modal fade" id="modificarResultadoModal" tabindex="-1" aria-labelledby="modificarResultadoModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title" id="modificarResultadoModalLabel">Modificar Resultados del Partido</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-        </div>
-        <div class="modal-body">
-          <div *ngIf="partido">
-            <h5>{{ pareja1Nombre }} vs {{ pareja2Nombre }}</h5>
-            <form (ngSubmit)="guardarCambios(partido)">
-              <div class="mb-3">
-                <label for="resultadoPareja1" class="form-label">Resultado {{ pareja1Nombre }}</label>
-                <input type="number" class="form-control" id="resultadoPareja1" [(ngModel)]="resultadoPareja1" name="resultadoPareja1" required>
-              </div>
-              <div class="mb-3">
-                <label for="resultadoPareja2" class="form-label">Resultado {{ pareja2Nombre }}</label>
-                <input type="number" class="form-control" id="resultadoPareja2" [(ngModel)]="resultadoPareja2" name="resultadoPareja2" required>
-              </div>
-              <button type="submit" class="btn btn-primary">Guardar Cambios</button>
-            </form>
+  <ng-template #content let-modal>
+    <div class="modal-header">
+      <h5 class="modal-title">Modificar Resultados del Partido</h5>
+      <button type="button" class="btn-close" aria-label="Close" (click)="modal.close()"></button>
+    </div>
+    <div class="modal-body">
+      <div *ngIf="partido">
+        <h5>{{ pareja1Nombre }} vs {{ pareja2Nombre }}</h5>
+        <form (ngSubmit)="guardarCambios(partido)">
+          <div class="mb-3">
+            <label for="resultadoPareja1" class="form-label">Resultado {{ pareja1Nombre }}</label>
+            <input type="number" class="form-control" id="resultadoPareja1" [(ngModel)]="resultadoPareja1" name="resultadoPareja1" required>
           </div>
-        </div>
+          <div class="mb-3">
+            <label for="resultadoPareja2" class="form-label">Resultado {{ pareja2Nombre }}</label>
+            <input type="number" class="form-control" id="resultadoPareja2" [(ngModel)]="resultadoPareja2" name="resultadoPareja2" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        </form>
       </div>
     </div>
-  </div>
+  </ng-template>
 </div>
 

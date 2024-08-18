@@ -1,4 +1,4 @@
-import { Component, EventEmitter, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Output, OnInit, TemplateRef, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { GrupoService } from '../services/grupo.service';
 import { PartidoService } from '../services/partido.service';
@@ -7,6 +7,7 @@ import { Partido } from '../models/partido.model';
 import { AmericanoService } from '../services/americano.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Pareja } from '../models/pareja.model';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-americano',
@@ -26,16 +27,19 @@ export class AmericanoComponent implements OnInit {
 
   selectedPartidoId?: number;
   partido: Partido | undefined;
+  modalRef: any;
+
+  @ViewChild('content') content!: TemplateRef<any>;
 
   @Output() partidoSeleccionado = new EventEmitter<number>();
 
   constructor(
-
     private router: Router,
     private route: ActivatedRoute,
     private grupoService: GrupoService,
     private partidoService: PartidoService,
-    private americanoService: AmericanoService
+    private americanoService: AmericanoService,
+    private modalService: NgbModal
   ) { }
 
   ngOnInit() {
@@ -49,6 +53,14 @@ export class AmericanoComponent implements OnInit {
         console.error('americanoId no está definido en la URL');
       }
     });
+  }
+
+  open(content: TemplateRef<any>) {
+    if (this.partido) {
+      this.modalRef = this.modalService.open(content);
+    } else {
+      console.error('No hay un partido seleccionado para mostrar en el modal');
+    }
   }
 
   loadAmericano() {
@@ -128,21 +140,19 @@ export class AmericanoComponent implements OnInit {
     );
   }
 
-
   modificarResultado(partido: Partido): void {
     if (partido && partido.pareja1 && partido.pareja2 && partido.id !== undefined) {
-      this.cargarPartido(partido.id);
+      this.partido = partido;
       this.pareja1Nombre = partido.pareja1.nombre_pareja || '';
       this.pareja2Nombre = partido.pareja2.nombre_pareja || '';
       this.resultadoPareja1 = partido.resultadoPareja1 || 0;
       this.resultadoPareja2 = partido.resultadoPareja2 || 0;
-      this.selectedPartidoId = partido.id;
-      console.log('Modificar resultado para el partido con ID:', partido.id);
+      console.log('Modificando resultado para el partido con ID:', partido.id);
+      this.open(this.content); // Asegúrate de que `this.content` es el `TemplateRef` del modal
     } else {
-      console.error('El partido, las parejas o el ID no están definidos');
+      console.error('El partido o las parejas no están definidos');
     }
   }
-
 
   cargarPartido(id: number): void {
     this.partidoService.getPartidoPorId(id).subscribe(
@@ -159,7 +169,6 @@ export class AmericanoComponent implements OnInit {
       }
     );
   }
-
 
   guardarCambios(partido: Partido): void {
     if (!partido.id) {
@@ -178,21 +187,16 @@ export class AmericanoComponent implements OnInit {
       resultadoPareja2: partido.resultadoPareja2,
     };
 
-
     this.partidoService.actualizarPartido(partido.id, partidoActualizado)
       .subscribe({
         next: response => {
           console.log('Partido actualizado con éxito:', response);
-
-          this.router.navigate(['/americano', this.americanoId]);
+          this.modalRef.close();
         },
         error: error => {
           console.error('Error al actualizar el partido:', error);
         }
       });
   }
-
-
 }
-
 
