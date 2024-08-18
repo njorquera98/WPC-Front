@@ -1,5 +1,5 @@
 import { Component, EventEmitter, Output, OnInit } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { GrupoService } from '../services/grupo.service';
 import { PartidoService } from '../services/partido.service';
 import { Grupo } from '../models/grupo.model';
@@ -30,6 +30,8 @@ export class AmericanoComponent implements OnInit {
   @Output() partidoSeleccionado = new EventEmitter<number>();
 
   constructor(
+
+    private router: Router,
     private route: ActivatedRoute,
     private grupoService: GrupoService,
     private partidoService: PartidoService,
@@ -158,24 +160,38 @@ export class AmericanoComponent implements OnInit {
     );
   }
 
-  guardarCambios(): void {
-    if (this.selectedPartidoId !== undefined && this.partido) {
-      const partidoActualizado: Partido = {
-        ...this.partido,
-        resultadoPareja1: this.resultadoPareja1,
-        resultadoPareja2: this.resultadoPareja2
-      };
-      this.partidoService.actualizarPartido(this.selectedPartidoId, partidoActualizado).subscribe(
-        () => {
-          console.log('Partido actualizado con éxito');
-          this.loadPartidos(); // Vuelve a cargar los partidos después de actualizar
+
+  guardarCambios(partido: Partido): void {
+    if (!partido.id) {
+      console.error('Error: el ID del partido es indefinido');
+      return;
+    }
+
+    // Actualiza los valores en el objeto `partido` con los valores de los inputs
+    partido.resultadoPareja1 = this.resultadoPareja1;
+    partido.resultadoPareja2 = this.resultadoPareja2;
+
+    console.log("antes", partido);
+
+    const partidoActualizado = {
+      resultadoPareja1: partido.resultadoPareja1,
+      resultadoPareja2: partido.resultadoPareja2,
+    };
+
+
+    this.partidoService.actualizarPartido(partido.id, partidoActualizado)
+      .subscribe({
+        next: response => {
+          console.log('Partido actualizado con éxito:', response);
+
+          this.router.navigate(['/americano', this.americanoId]);
         },
-        (error) => {
+        error: error => {
           console.error('Error al actualizar el partido:', error);
         }
-      );
-    }
+      });
   }
+
 
 }
 

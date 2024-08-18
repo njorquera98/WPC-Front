@@ -70,7 +70,7 @@
         <div class="modal-body">
           <div *ngIf="partido">
             <h5>{{ pareja1Nombre }} vs {{ pareja2Nombre }}</h5>
-            <form (ngSubmit)="guardarCambios()">
+            <form (ngSubmit)="guardarCambios(partido)">
               <div class="mb-3">
                 <label for="resultadoPareja1" class="form-label">Resultado {{ pareja1Nombre }}</label>
                 <input type="number" class="form-control" id="resultadoPareja1" [(ngModel)]="resultadoPareja1" name="resultadoPareja1" required>
