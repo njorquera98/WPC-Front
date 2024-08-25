@@ -6,4 +6,5 @@ export interface Pareja {
   americano_fk?: number;
   grupo_fk?: number;
   grupo?: Grupo;
+  puntos?: number;
 }
